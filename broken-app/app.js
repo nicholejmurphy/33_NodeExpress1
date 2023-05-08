@@ -1,18 +1,24 @@
-const express = require('express');
-let axios = require('axios');
-var app = express();
+const express = require("express");
+const axios = require("axios");
+const morgan = require("morgan");
+const getResults = require("./helpers");
 
-app.post('/', function(req, res, next) {
+const app = express();
+
+app.use(morgan("dev"));
+app.use(express.json());
+
+app.get("/", async (req, res, next) => {
   try {
-    let results = req.body.developers.map(async d => {
-      return await axios.get(`https://api.github.com/users/${d}`);
+    const results = getResults(req.body.developers);
+    Promise.all(results).then((results) => {
+      return res.send(results);
     });
-    let out = results.map(r => ({ name: r.data.name, bio: r.data.bio }));
-
-    return res.send(JSON.stringify(out));
-  } catch {
+  } catch (err) {
     next(err);
   }
 });
 
-app.listen(3000);
+app.listen(3000, () => {
+  console.log("Starting server on port 3000");
+});
